@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UNPAM Signal Care - Portal Management</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        matcha: {
+                            50: '#f1f3ed',
+                            100: '#e3e7db',
+                            500: '#838F58', // Warna Matcha (#838F58)
+                            700: '#6a7447',
+                            800: '#525b36',
+                            900: '#3a4125',
+                        },
+                        strawberry: {
+                            50: '#fdf7f8',
+                            100: '#faeff1',
+                            200: '#F9D1D9', // Warna Pink Strawberry (#F9D1D9)
+                            300: '#f4acb7',
+                            500: '#e07a5f',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Firebase SDK (Compat Version) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { 
+            font-family: 'Inter', sans-serif; 
+            /* Latar belakang dengan motif polkadot halus */
+            background-color: #faeff1;
+            background-image: radial-gradient(#838F58 1.2px, transparent 1.2px), radial-gradient(#F9D1D9 1.2px, #faeff1 1.2px);
+            background-size: 40px 40px;
+            background-position: 0 0, 20px 20px;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-matcha-900 flex flex-col justify-start pb-12">
+
+    <!-- 1. HALAMAN LOGIN PILIHAN (ADMIN / KEPALA IT) -->
+    <section id="adminLoginSection" class="w-full max-w-md mx-auto my-auto p-6 md:p-8 bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-strawberry-200 mt-16">
+        <div class="text-center mb-6">
+            <div class="w-16 h-16 bg-strawberry-200 text-matcha-900 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner">
+                <i data-lucide="sparkles" class="w-8 h-8"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-matcha-900">Portal Pengelola</h2>
+            <p class="text-xs text-matcha-700 mt-1">Pilih peran Anda dan masuk untuk mengelola portal</p>
+        </div>
+
+        <form onsubmit="handlePortalLogin(event)" class="space-y-4">
+            <!-- Pilihan Role -->
+            <div>
+                <label class="block text-xs font-semibold text-matcha-800 mb-1">Masuk Sebagai Peran *</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <label class="border border-strawberry-200 rounded-xl p-3 flex items-center gap-2 cursor-pointer hover:border-matcha-500 has-[:checked]:border-matcha-500 has-[:checked]:bg-strawberry-100/50 transition">
+                        <input type="radio" name="loginRole" value="admin" checked class="text-matcha-500 focus:ring-matcha-500">
+                        <div>
+                            <p class="text-xs font-bold text-matcha-900">Admin IT</p>
+                            <p class="text-[10px] text-matcha-700">Kelola Status & Info</p>
+                        </div>
+                    </label>
+                    <label class="border border-strawberry-200 rounded-xl p-3 flex items-center gap-2 cursor-pointer hover:border-matcha-500 has-[:checked]:border-matcha-500 has-[:checked]:bg-strawberry-100/50 transition">
+                        <input type="radio" name="loginRole" value="kepala" class="text-matcha-500 focus:ring-matcha-500">
+                        <div>
+                            <p class="text-xs font-bold text-matcha-900">Kepala IT</p>
+                            <p class="text-[10px] text-matcha-700">Terima / Tolak Laporan</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-matcha-800 mb-1">Username / ID Pengelola *</label>
+                <div class="relative">
+                    <i data-lucide="user" class="w-4 h-4 absolute left-3 top-3 text-matcha-500"></i>
+                    <input type="text" id="inputUsername" required placeholder="Masukkan Username" class="w-full pl-9 pr-3 py-2.5 text-sm border border-strawberry-200 rounded-xl focus:ring-2 focus:ring-matcha-500 outline-none transition bg-strawberry-50/30">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-matcha-800 mb-1">Kata Sandi *</label>
+                <div class="relative">
+                    <i data-lucide="lock" class="w-4 h-4 absolute left-3 top-3 text-matcha-500"></i>
+                    <input type="password" id="inputPassword" required placeholder="Masukkan kata sandi" class="w-full pl-9 pr-3 py-2.5 text-sm border border-strawberry-200 rounded-xl focus:ring-2 focus:ring-matcha-500 outline-none transition bg-strawberry-50/30">
+                </div>
+            </div>
+
+            <button type="submit" class="w-full bg-matcha-500 hover:bg-matcha-700 text-white font-semibold py-3 rounded-xl text-sm shadow-md transition flex items-center justify-center gap-2 mt-2">
+                <i data-lucide="heart" class="w-4 h-4"></i> Masuk Dashboard
+            </button>
+        </form>
+
+        <div class="mt-6 text-center text-xs text-matcha-500">
+            UNPAM Signal Care &bull; Management Authorization
+        </div>
+    </section>
+
+    <!-- 2. DASHBOARD PANEL UTAMA (Satu Halaman untuk Admin & Kepala IT) -->
+    <section id="adminDashboardSection" class="hidden p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
+        <!-- Header Panel -->
+        <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-strawberry-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <div class="flex items-center gap-2">
+                    <span id="roleBadge" class="bg-strawberry-200 text-matcha-900 text-xs font-bold px-3 py-0.5 rounded-full flex items-center gap-1">
+                        <i data-lucide="sparkles" class="w-3 h-3"></i> Admin IT
+                    </span>
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                    <span class="text-[10px] text-emerald-600 font-semibold">Realtime Live Monitoring</span>
+                </div>
+                <h2 id="dashboardTitle" class="text-2xl font-bold text-matcha-900 mt-1">Panel Kelola UNPAM Signal Care</h2>
+                <p id="dashboardDesc" class="text-xs text-matcha-700">Kelola tiket laporan pengaduan mahasiswa dan publikasikan info gangguan.</p>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <!-- Tombol Tambah Info Hanya Muncul untuk Admin IT -->
+                <button id="btnTambahInfo" onclick="showAddInfoModal()" class="bg-strawberry-200 hover:bg-strawberry-300 text-matcha-900 px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Tambah Info Gangguan
+                </button>
+                
+                <button onclick="logoutPortal()" class="bg-matcha-100 hover:bg-strawberry-200 text-matcha-800 hover:text-matcha-900 border border-strawberry-200 px-3 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition">
+                    <i data-lucide="log-out" class="w-4 h-4"></i> Keluar
+                </button>
+            </div>
+        </div>
+
+        <!-- Statistik Rangkuman -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-white/90 backdrop-blur-sm border border-strawberry-200 p-4 rounded-xl shadow-sm">
+                <p class="text-xs text-matcha-700 font-medium flex items-center gap-1"><i data-lucide="file-text" class="w-3.5 h-3.5 text-matcha-500"></i> Total Laporan</p>
+                <p id="statTotal" class="text-2xl font-black text-matcha-900 mt-1">0</p>
+            </div>
+            <div class="bg-white/90 backdrop-blur-sm border border-strawberry-200 p-4 rounded-xl shadow-sm">
+                <p class="text-xs text-amber-700 font-medium flex items-center gap-1"><i data-lucide="clock" class="w-3.5 h-3.5 text-amber-500"></i> Diproses</p>
+                <p id="statDiproses" class="text-2xl font-black text-amber-900 mt-1">0</p>
+            </div>
+            <div class="bg-white/90 backdrop-blur-sm border border-strawberry-200 p-4 rounded-xl shadow-sm">
+                <p class="text-xs text-emerald-700 font-medium flex items-center gap-1"><i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i> Diterima / Selesai</p>
+                <p id="statDiterima" class="text-2xl font-black text-emerald-900 mt-1">0</p>
+            </div>
+            <div class="bg-white/90 backdrop-blur-sm border border-strawberry-200 p-4 rounded-xl shadow-sm">
+                <p class="text-xs text-rose-700 font-medium flex items-center gap-1"><i data-lucide="x-circle" class="w-3.5 h-3.5 text-rose-500"></i> Ditolak</p>
+                <p id="statDitolak" class="text-2xl font-black text-rose-900 mt-1">0</p>
+            </div>
+        </div>
+
+        <!-- Tabel Laporan Masuk -->
+        <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-sm border border-strawberry-200 p-6 space-y-4">
+            <h3 class="font-bold text-matcha-900 text-sm flex items-center gap-2">
+                <i data-lucide="flower" class="w-4 h-4 text-matcha-500"></i> Daftar Laporan Masuk Mahasiswa
+            </h3>
+            <div class="overflow-x-auto border border-strawberry-200 rounded-xl">
+                <table class="w-full text-left text-xs text-matcha-800">
+                    <thead class="bg-strawberry-100/70 font-semibold uppercase text-[10px] border-b border-strawberry-200 text-matcha-900">
+                        <tr>
+                            <th class="p-3.5">Tiket & NIM Mahasiswa</th>
+                            <th class="p-3.5">Lokasi Kampus</th>
+                            <th class="p-3.5">Kendala & Detail</th>
+                            <th class="p-3.5">Foto Bukti</th>
+                            <th class="p-3.5">Status Laporan</th>
+                            <th id="thAksiStatus" class="p-3.5 text-center">Tindakan / Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminTableBody" class="divide-y divide-strawberry-100"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- MODAL POPUP LIHAT FOTO BUKTI -->
+    <div id="imageModal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-5 relative shadow-xl space-y-3">
+            <div class="flex justify-between items-center border-b border-strawberry-100 pb-2">
+                <h3 class="font-bold text-sm text-matcha-900 flex items-center gap-1"><i data-lucide="image" class="w-4 h-4 text-matcha-500"></i> Foto Bukti Pengaduan</h3>
+                <button onclick="closeImageModal()" class="text-matcha-500 hover:text-matcha-800 p-1 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="text-center">
+                <img id="modalImageSrc" class="w-full max-h-[70vh] object-contain rounded-xl border border-strawberry-200 shadow-sm mx-auto" alt="Bukti Foto">
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL TAMBAH INFO GANGGUAN -->
+    <div id="addInfoModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-5 space-y-4 shadow-xl border border-strawberry-200">
+            <div class="flex justify-between items-center border-b border-strawberry-100 pb-2">
+                <h3 class="font-bold text-sm text-matcha-900 flex items-center gap-1.5"><i data-lucide="bell" class="w-4 h-4 text-matcha-500"></i> Publikasikan Info Gangguan</h3>
+                <button onclick="closeAddInfoModal()" class="text-matcha-500 hover:text-matcha-800">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form onsubmit="handleAddInfo(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-matcha-800 mb-1">Judul Info Gangguan *</label>
+                    <input type="text" id="infoTitle" required placeholder="Contoh: Pemeliharaan Sinyal Telkomsel" class="w-full px-3 py-2 text-xs border border-strawberry-200 rounded-lg outline-none focus:ring-2 focus:ring-matcha-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-matcha-800 mb-1">Lokasi Kampus / Area *</label>
+                    <input type="text" id="infoLocation" required placeholder="Contoh: Kampus Viktor Lt. 2 - 5" class="w-full px-3 py-2 text-xs border border-strawberry-200 rounded-lg outline-none focus:ring-2 focus:ring-matcha-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-matcha-800 mb-1">Status Keterangan *</label>
+                    <select id="infoStatusTag" class="w-full px-3 py-2 text-xs border border-strawberry-200 rounded-lg bg-white outline-none">
+                        <option value="Sedang Pemeliharaan">Sedang Pemeliharaan</option>
+                        <option value="Gangguan Massal">Gangguan Massal</option>
+                        <option value="Selesai Diperbaiki">Selesai Diperbaiki</option>
+                    </select>
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeAddInfoModal()" class="flex-1 py-2.5 bg-matcha-100 hover:bg-strawberry-200 text-matcha-800 rounded-xl text-xs font-semibold">Batal</button>
+                    <button type="submit" class="flex-1 py-2.5 bg-matcha-500 hover:bg-matcha-700 text-white rounded-xl text-xs font-semibold shadow-sm">Publikasikan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SCRIPT APLIKASI MANAGEMEN -->
+    <script>
+        const firebaseConfig = { databaseURL: "https://unpamsignalcare-default-rtdb.firebaseio.com/" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let reportsData = {};
+        let activeRole = localStorage.getItem('unpam_portal_role') || null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            if (activeRole) {
+                renderDashboardView(activeRole);
+            }
+        });
+
+        function handlePortalLogin(e) {
+            e.preventDefault();
+            const selectedRole = document.querySelector('input[name="loginRole"]:checked').value;
+            activeRole = selectedRole;
+            localStorage.setItem('unpam_portal_role', selectedRole);
+            renderDashboardView(selectedRole);
+        }
+
+        function renderDashboardView(role) {
+            document.getElementById('adminLoginSection').classList.add('hidden');
+            document.getElementById('adminDashboardSection').classList.remove('hidden');
+
+            const roleBadge = document.getElementById('roleBadge');
+            const dashboardTitle = document.getElementById('dashboardTitle');
+            const dashboardDesc = document.getElementById('dashboardDesc');
+            const btnTambahInfo = document.getElementById('btnTambahInfo');
+            const thAksiStatus = document.getElementById('thAksiStatus');
+
+            if (role === 'kepala') {
+                roleBadge.className = "bg-strawberry-200 text-matcha-900 text-xs font-bold px-3 py-0.5 rounded-full flex items-center gap-1";
+                roleBadge.innerHTML = `<i data-lucide="crown" class="w-3 h-3 text-matcha-600"></i> Kepala IT (Persetujuan Laporan)`;
+                dashboardTitle.innerText = "Portal Keputusan Kepala IT";
+                dashboardDesc.innerText = "Tinjau dan berikan persetujuan (Terima / Tolak) pada pengaduan yang dikirim mahasiswa.";
+                btnTambahInfo.classList.add('hidden');
+                thAksiStatus.innerText = "Keputusan (Terima/Tolak)";
+            } else {
+                roleBadge.className = "bg-strawberry-200 text-matcha-900 text-xs font-bold px-3 py-0.5 rounded-full flex items-center gap-1";
+                roleBadge.innerHTML = `<i data-lucide="sparkles" class="w-3 h-3 text-matcha-600"></i> Admin IT`;
+                dashboardTitle.innerText = "Panel Kelola UNPAM Signal Care";
+                dashboardDesc.innerText = "Kelola tiket laporan pengaduan mahasiswa dan publikasikan info gangguan.";
+                btnTambahInfo.classList.remove('hidden');
+                thAksiStatus.innerText = "Ubah Progres Status";
+            }
+
+            // Inisialisasi Realtime Listener Firebase
+            db.ref('reports').on('value', (snap) => {
+                reportsData = snap.val() || {};
+                renderAdminTable(role);
+            });
+        }
+
+        function renderAdminTable(role) {
+            const tbody = document.getElementById('adminTableBody');
+            const arr = Object.values(reportsData);
+
+            document.getElementById('statTotal').innerText = arr.length;
+            document.getElementById('statDiproses').innerText = arr.filter(r => r.status === 'Diproses' || r.status === 'Dalam Penanganan').length;
+            document.getElementById('statDiterima').innerText = arr.filter(r => r.status === 'Laporan Diterima' || r.status === 'Selesai').length;
+            document.getElementById('statDitolak').innerText = arr.filter(r => r.status === 'Laporan Ditolak').length;
+
+            if (arr.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-matcha-600">Belum ada pengaduan masuk dari mahasiswa.</td></tr>`;
+                return;
+            }
+
+            arr.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+            tbody.innerHTML = arr.map(r => `
+                <tr class="hover:bg-strawberry-50/40 transition">
+                    <td class="p-3.5">
+                        <p class="font-bold text-matcha-900">#${r.ticket}</p>
+                        <!-- Nama dirahasiakan, hanya menampilkan NIM -->
+                        <p class="text-xs font-semibold text-matcha-800 mt-0.5"><i data-lucide="user-x" class="w-3 h-3 inline mr-1 text-matcha-500"></i>NIM: ${r.nim || '-'}</p>
+                        <p class="text-[10px] text-matcha-600 mt-0.5">${r.date || ''}</p>
+                    </td>
+                    <td class="p-3.5">
+                        <p class="font-semibold text-matcha-900">${r.kampus}</p>
+                        <p class="text-[10px] text-matcha-600">${r.gedung} (${r.lantai})</p>
+                    </td>
+                    <td class="p-3.5">
+                        <p class="font-semibold text-matcha-900">${r.kendala}</p>
+                        <p class="text-[10px] text-matcha-600">Provider: ${r.provider}</p>
+                        <p class="text-[10px] text-matcha-600 italic max-w-xs truncate">${r.deskripsi || ''}</p>
+                    </td>
+                    <td class="p-3.5">
+                        ${r.foto ? `<button onclick="openImageModal('${r.foto}')" class="px-2.5 py-1 bg-strawberry-100 hover:bg-strawberry-200 text-matcha-900 rounded-lg text-[10px] font-semibold border border-strawberry-200 flex items-center gap-1 transition"><i data-lucide="image" class="w-3 h-3"></i> Lihat Foto</button>` : '<span class="text-[10px] text-matcha-500 italic">Tanpa Foto</span>'}
+                    </td>
+                    <td class="p-3.5">
+                        <span class="px-2.5 py-1 text-[10px] font-bold rounded-full ${
+                            r.status === 'Laporan Diterima' || r.status === 'Selesai' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
+                            r.status === 'Laporan Ditolak' ? 'bg-rose-100 text-rose-800 border border-rose-200' :
+                            r.status === 'Dalam Penanganan' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' :
+                            'bg-strawberry-200 text-matcha-900 border border-strawberry-300'
+                        }">
+                            ${r.status || 'Diproses'}
+                        </span>
+                    </td>
+                    <td class="p-3.5 text-center">
+                        ${role === 'kepala' ? `
+                            <!-- Aksi Khusus Kepala IT: Tombol Terima atau Tolak -->
+                            <div class="flex items-center justify-center gap-1">
+                                <button onclick="updateStatus('${r.ticket}', 'Laporan Diterima')" title="Terima Laporan" class="px-2.5 py-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[10px] font-bold flex items-center gap-0.5 transition shadow-sm">
+                                    <i data-lucide="check" class="w-3 h-3"></i> Terima
+                                </button>
+                                <button onclick="updateStatus('${r.ticket}', 'Laporan Ditolak')" title="Tolak Laporan" class="px-2.5 py-1 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-[10px] font-bold flex items-center gap-0.5 transition shadow-sm">
+                                    <i data-lucide="x" class="w-3 h-3"></i> Tolak
+                                </button>
+                            </div>
+                        ` : `
+                            <!-- Aksi Khusus Admin IT: Ubah Status Progres Penanganan -->
+                            <select onchange="updateStatus('${r.ticket}', this.value)" class="text-[11px] p-1.5 border border-strawberry-200 rounded-lg bg-white font-medium outline-none cursor-pointer hover:border-matcha-500 transition">
+                                <option value="Diproses" ${r.status === 'Diproses' ? 'selected' : ''}>Diproses</option>
+                                <option value="Dalam Penanganan" ${r.status === 'Dalam Penanganan' ? 'selected' : ''}>Dalam Penanganan</option>
+                                <option value="Selesai" ${r.status === 'Selesai' ? 'selected' : ''}>Selesai</option>
+                            </select>
+                        `}
+                    </td>
+                </tr>
+            `).join('');
+            
+            setTimeout(() => lucide.createIcons(), 50);
+        }
+
+        function updateStatus(ticket, status) {
+            db.ref('reports/' + ticket).update({ status }, (error) => {
+                if (error) {
+                    alert("Gagal mengubah status: " + error.message);
+                }
+            });
+        }
+
+        // Fungsi Modal Foto
+        function openImageModal(img) {
+            document.getElementById('modalImageSrc').src = img;
+            document.getElementById('imageModal').classList.remove('hidden');
+        }
+
+        function closeImageModal() { 
+            document.getElementById('imageModal').classList.add('hidden'); 
+        }
+
+        function showAddInfoModal() { 
+            document.getElementById('addInfoModal').classList.remove('hidden'); 
+        }
+
+        function closeAddInfoModal() { 
+            document.getElementById('addInfoModal').classList.add('hidden'); 
+        }
+
+        function handleAddInfo(e) {
+            e.preventDefault();
+            const id = 'INFO-' + Date.now();
+            const info = {
+                id,
+                title: document.getElementById('infoTitle').value,
+                location: document.getElementById('infoLocation').value,
+                statusTag: document.getElementById('infoStatusTag').value,
+                time: new Date().toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
+            };
+            db.ref('info_gangguan/' + id).set(info, (err) => {
+                if (!err) {
+                    closeAddInfoModal();
+                    e.target.reset();
+                    alert('Info gangguan berhasil dipublikasikan!');
+                } else {
+                    alert('Gagal mempublikasikan info: ' + err.message);
+                }
+            });
+        }
+
+        function logoutPortal() {
+            activeRole = null;
+            localStorage.removeItem('unpam_portal_role');
+            document.getElementById('adminDashboardSection').classList.add('hidden');
+            document.getElementById('adminLoginSection').classList.remove('hidden');
+            setTimeout(() => lucide.createIcons(), 50);
+        }
+    </script>
+</body>
+</html>
